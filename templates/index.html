@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Support Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mental Health Support Platform</h1>
+
+    <div class="container" id="registration-container">
+        <h2>User Registration</h2>
+        <input type="text" id="reg-name" placeholder="Name" required><br>
+        <input type="email" id="reg-email" placeholder="Email" required><br>
+        <input type="password" id="reg-password" placeholder="Password" required><br>
+        <button onclick="registerUser()">Register</button>
+        <p id="reg-message"></p>
+    </div>
+
+    <div class="container" id="login-container">
+        <h2>User Login</h2>
+        <input type="email" id="login-email" placeholder="Email" required><br>
+        <input type="password" id="login-password" placeholder="Password" required><br>
+        <button onclick="loginUser()">Login</button>
+        <p id="login-message"></p>
+    </div>
+
+    <div class="container hidden" id="profile-container">
+        <h2>User Profile</h2>
+        <button onclick="getUserProfile()">Fetch Profile</button>
+        <p id="profile-info"></p>
+    </div>
+
+    <div class="container hidden" id="mood-container">
+        <h2>Mood Tracking</h2>
+        <select id="mood-select">
+            <option value="happy">Happy</option>
+            <option value="anxious">Anxious</option>
+            <option value="depressed">Depressed</option>
+            <option value="hopeful">Hopeful</option>
+        </select>
+        <button onclick="recordMood()">Record Mood</button>
+        <p id="mood-message"></p>
+        <button onclick="getMoodHistory()">View Mood History</button>
+        <p id="mood-history"></p>
+    </div>
+
+    <div class="container hidden" id="resources-container">
+        <h2>Mental Health Resources</h2>
+        <button onclick="fetchResources()">Fetch Resources</button>
+        <p id="resources-info"></p>
+    </div>
+
+    <div class="container hidden" id="counselor-container">
+        <h2>Counselor Support</h2>
+        <button onclick="connectCounselor()">Connect to Counselor</button>
+        <p id="counselor-message"></p>
+    </div>
+
+    <div class="container hidden" id="crisis-container">
+        <h2>Crisis Support</h2>
+        <button onclick="triggerCrisisSupport()">Trigger Crisis Support</button>
+        <p id="crisis-message"></p>
+    </div>
+
+    <div class="container hidden" id="notification-container">
+        <h2>Set Reminders</h2>
+        <input type="text" id="reminder-input" placeholder="Enter reminder" required>
+        <button onclick="setReminder()">Set Reminder</button>
+        <p id="reminder-message"></p>
+    </div>
+
+    <script>
+        let userEmail = '';
+
+        function registerUser() {
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            fetch('http://localhost:5000/users/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('reg-message').innerText = data.message;
+            });
+        }
+
+        function loginUser() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            fetch('http://localhost:5000/users/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => {
+                if (response.ok) {
+                    userEmail = email;
+                    document.getElementById('login-message').innerText = 'Login successful!';
+                    showProfileAndMoodContainers();
+                } else {
+                    return response.json().then(data => {
+                        document.getElementById('login-message').innerText = data.message;
+                    });
+                }
+            });
+        }
+
+        function showProfileAndMoodContainers() {
+            document.getElementById('profile-container').classList.remove('hidden');
+            document.getElementById('mood-container').classList.remove('hidden');
+            document.getElementById('resources-container').classList.remove('hidden');
+            document.getElementById('counselor-container').classList.remove('hidden');
+            document.getElementById('crisis-container').classList.remove('hidden');
+            document.getElementById('notification-container').classList.remove('hidden');
+        }
+
+        function getUserProfile() {
+            fetch(`http://localhost:5000/users/profile?email=${userEmail}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    document.getElementById('profile-info').innerText = data.message;
+                } else {
+                    document.getElementById('profile-info').innerText = `Name: ${data.name}, Mood History: ${JSON.stringify(data.mood_history)}`;
+                }
+            });
+        }
+
+        function recordMood() {
+            const mood = document.getElementById('mood-select').value;
+
+            fetch('http://localhost:5000/mood', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, mood })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('mood-message').innerText = data.message;
+            });
+        }
+
+        function getMoodHistory() {
+            fetch(`http://localhost:5000/mood/history?email=${userEmail}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    document.getElementById('mood-history').innerText = data.message;
+                } else {
+                    document.getElementById('mood-history').innerText = JSON.stringify(data.mood_history);
+                }
+            });
+        }
+
+        function fetchResources() {
+            fetch('http://localhost:5000/resources')
+            .then(response => response.json())
+            .then(data => {
+                const resourcesInfo = Object.values(data).map(res => `${res.title}: ${res.content}`).join('<br>');
+                document.getElementById('resources-info').innerHTML = resourcesInfo;
+            });
+        }
+
+        function connectCounselor() {
+            fetch('http://localhost:5000/counselor/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, session_type: 'chat' }) // or 'video'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('counselor-message').innerText = data.message;
+            });
+        }
+
+        function triggerCrisisSupport() {
+            fetch('http://localhost:5000/crisis/help', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('crisis-message').innerText = data.message;
+            });
+        }
+
+        function setReminder() {
+            const reminder = document.getElementById('reminder-input').value;
+
+            fetch('http://localhost:5000/notifications/reminders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, reminder })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('reminder-message').innerText = data.message;
+            });
+        }
+    </script>
+</body>
+</html>
